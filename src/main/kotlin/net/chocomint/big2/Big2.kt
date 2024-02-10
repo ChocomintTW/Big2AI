@@ -73,30 +73,17 @@ object Big2 {
                     }
                 }
 
-                Type.STRAIGHT -> {
+                Type.STRAIGHT, Type.STRAIGHT_FLUSH -> {
                     val searchList = list.map { it.rank }.toSet()
                         .sortedBy { rank -> (rank.priority + 1) % 13 }
 
-                    return (0..searchList.size - 5)
+                    (0..searchList.size - 5)
                         .map { i -> searchList.subList(i, i + 5) }
                         .filter { (it.last().priority - it.first().priority + 13) % 13 == 4 }
                         .flatMap { rankList ->
-                            generateCombinations( rankList.map { rank -> list.filter { it.rank == rank } } )
+                            generateCombinations(rankList.map { rank -> list.filter { it.rank == rank } })
                         }
-                        .map { CardSet(*it.toTypedArray()) }
-                }
-
-                Type.STRAIGHT_FLUSH -> {
-                    val searchList = list.map { it.rank }.toSet()
-                        .sortedBy { rank -> (rank.priority + 1) % 13 }
-
-                    return (0..searchList.size - 5)
-                        .map { i -> searchList.subList(i, i + 5) }
-                        .filter { (it.last().priority - it.first().priority + 13) % 13 == 4 }
-                        .flatMap { rankList ->
-                            generateCombinations( rankList.map { rank -> list.filter { it.rank == rank } } )
-                        }
-                        .filter { list -> list.all { it.suit == list[0].suit } } // flush check
+                        .filter { list -> type == Type.STRAIGHT_FLUSH || list.all { it.suit == list[0].suit } }
                         .map { CardSet(*it.toTypedArray()) }
                 }
 
