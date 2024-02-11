@@ -26,10 +26,6 @@ object Big2 {
         }.map { Deck(it) }
     }
 
-//    fun shuffle2p(seed: Long): List<Deck> {
-//        return Card.listAll().shuffled(Random(seed)).chunked(26).map { Deck(it) }
-//    }
-
     class Deck(private val list: List<Card>) {
 
         fun asList(): List<Card> = list.sorted()
@@ -42,45 +38,42 @@ object Big2 {
 
                 Type.SINGLE -> asList().map { CardSet(it) }
 
-                Type.PAIR -> asList().combinations()
-                    .filter { it.first.rank == it.second.rank }
-                    .map { CardSet(it.first, it.second) }
+                Type.PAIR -> {
+                    asList().combinations()
+                        .filter { it.first.rank == it.second.rank }
+                        .map { CardSet(it.first, it.second) }
+                }
 
                 Type.FULL_HOUSE -> {
-                    val all3 = map.filterValues { it == 3 }.map { entry ->
-                        asList().filter { it.rank == entry.key }
-                    }
-                    val all2 = asList().combinations()
-                        .filter { it.first.rank == it.second.rank }
-
-                    return all3.flatMap { tuple3 ->
-                        all2.filter { it.first.rank != tuple3[0].rank }
-                            .map { tuple3 + it.first + it.second }
-                            .map { CardSet(*it.toTypedArray()) }
-                    }
+                    map.filterValues { it == 3 }
+                        .map { entry -> asList().filter { it.rank == entry.key } } // all 3-cards set
+                        .flatMap { tuple3 ->
+                            asList().combinations()
+                                .filter { it.first.rank == it.second.rank } // all 2-cards set
+                                .filter { it.first.rank != tuple3[0].rank } // check not the same with tuple3's rank
+                                .map { tuple3 + it.first + it.second }
+                                .map { CardSet(*it.toTypedArray()) }
+                        }
                 }
 
                 Type.FOUR_OF_A_KIND -> {
-                    val all4 = map.filterValues { it == 4 }.map { entry ->
-                        asList().filter { it.rank == entry.key }
-                    }
-                    val all1 = asList()
-
-                    return all4.flatMap { tuple4 ->
-                        all1.filter { it.rank != tuple4[0].rank }
-                            .map { tuple4 + it }
-                            .map { CardSet(*it.toTypedArray()) }
-                    }
+                    map.filterValues { it == 4 }
+                        .map { entry -> asList().filter { it.rank == entry.key } } // all 4-cards set
+                        .flatMap { tuple4 ->
+                            asList().filter { it.rank != tuple4[0].rank }
+                                .map { tuple4 + it }
+                                .map { CardSet(*it.toTypedArray()) }
+                        }
                 }
 
                 Type.STRAIGHT, Type.STRAIGHT_FLUSH -> {
-                    val searchList = list.map { it.rank }.toSet()
-                        .sortedBy { rank -> (rank.priority + 1) % 13 }
-
-                    (0..searchList.size - 5)
-                        .map { i -> searchList.subList(i, i + 5) }
+                    list.map { it.rank }
+                        .toSet()
+                        .sortedBy { (it.priority + 1) % 13 }
+                        .consecutiveSubs(5)
                         .filter { (it.last().priority - it.first().priority + 13) % 13 == 4 }
                         .flatMap { rankList ->
+                            // combine all possible rank for found straights
                             generateCombinations(rankList.map { rank -> list.filter { it.rank == rank } })
                         }
                         .filter { list -> type == Type.STRAIGHT || list.all { it.suit == list[0].suit } }
@@ -121,5 +114,9 @@ object Big2 {
         return currentArray.flatMap { element ->
             generateCombinations(arrays, currentCombination + element, depth + 1)
         }
+    }
+
+    private fun <T> List<T>.consecutiveSubs(n: Int): List<List<T>> {
+        return (0..size - n).map { i -> subList(i, i + n) }
     }
 }
