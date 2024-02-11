@@ -83,7 +83,7 @@ object Big2 {
                         .flatMap { rankList ->
                             generateCombinations(rankList.map { rank -> list.filter { it.rank == rank } })
                         }
-                        .filter { list -> type == Type.STRAIGHT_FLUSH || list.all { it.suit == list[0].suit } }
+                        .filter { list -> type == Type.STRAIGHT || list.all { it.suit == list[0].suit } }
                         .map { CardSet(*it.toTypedArray()) }
                 }
 
